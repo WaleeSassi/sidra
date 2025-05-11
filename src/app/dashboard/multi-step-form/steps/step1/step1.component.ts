@@ -174,19 +174,6 @@ export class Step1Component implements OnInit {
       }
       structureForm.get('doping')?.updateValueAndValidity();
     });
-
-    // Modified validation for originOfDemandSetUuidOriginOfDemands
-    const originArray = this.structureForm.get('originOfDemandSetUuidOriginOfDemands') as FormArray;
-    if (originArray) {
-      originArray.valueChanges.subscribe(values => {
-        const hasSelection = values.some((item: any) => item.selected === true);
-        if (hasSelection) {
-          originArray.setErrors(null);
-        } else {
-          originArray.setErrors({ required: true });
-        }
-      });
-    }
   }
 
   get structureForm(): FormGroup {
@@ -204,10 +191,8 @@ export class Step1Component implements OnInit {
       array.removeAt(0);
     }
     // Add new controls
-    this.originOfDemande?.forEach(() => {
-      array.push(this.fb.group({
-        selected: [null]
-      }));
+    this.originOfDemande?.forEach((_, index) => {
+      array.push(this.fb.control(false));
     });
   }
 
@@ -310,10 +295,13 @@ export class Step1Component implements OnInit {
     this.showOtherAccommodationTypeInput = checkbox.checked && value === -1;
   }
 
-  checkOtherOriginOfDemand(uuidOrigin: number, selectedValue: boolean): void {
-    if (uuidOrigin === -1) {
-      this.showOtherOriginOfDemandInput = selectedValue;
-      if (selectedValue) {
+  checkOtherOriginOfDemand(index: number, value: boolean): void {
+    const originArray = this.originOfDemandControls;
+    originArray.at(index).setValue(value);
+
+    if (this.originOfDemande && this.originOfDemande[index].uuidOriginOfDemand === -1) {
+      this.showOtherOriginOfDemandInput = value;
+      if (value) {
         this.structureForm.get('otherOriginOfDemand')?.setValidators([Validators.required]);
       } else {
         this.structureForm.get('otherOriginOfDemand')?.clearValidators();
