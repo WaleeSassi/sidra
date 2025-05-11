@@ -23,11 +23,12 @@ export class Step1Component implements OnInit {
   @Input() parentForm!: FormGroup;
 
   constructor(
-    private drugRequestService: DrugRequestService,
-    private fb: FormBuilder
+      private drugRequestService: DrugRequestService,
+      private fb: FormBuilder
   ) {}
 
   ngOnInit(): void {
+    alert("s")
     this.getConsultancyFrameDtoList();
     this.getOriginOfDemandDtoList();
     this.getConsultancyMotifDto();
@@ -35,7 +36,9 @@ export class Step1Component implements OnInit {
     this.getAccommodationTypeDtoList();
     this.getProfessionDtoList();
     this.getSchoolLevelDtoList();
+    // Add required validators
     this.addValidators();
+
   }
 
   // Add validators to form controls
@@ -49,7 +52,7 @@ export class Step1Component implements OnInit {
       } else {
         structureForm.get('ongStructureId')?.clearValidators();
       }
-      structureForm.get('ongStructureId')?.updateValueAndValidity({ emitEvent: false });
+      structureForm.get('ongStructureId')?.updateValueAndValidity();
     });
 
     structureForm.get('residence')?.valueChanges.subscribe(value => {
@@ -60,8 +63,8 @@ export class Step1Component implements OnInit {
         structureForm.get('countryOfResidenceUuidCountry')?.setValidators([Validators.required]);
         structureForm.get('governorateOfResidenceUuidGovernorate')?.clearValidators();
       }
-      structureForm.get('governorateOfResidenceUuidGovernorate')?.updateValueAndValidity({ emitEvent: false });
-      structureForm.get('countryOfResidenceUuidCountry')?.updateValueAndValidity({ emitEvent: false });
+      structureForm.get('governorateOfResidenceUuidGovernorate')?.updateValueAndValidity();
+      structureForm.get('countryOfResidenceUuidCountry')?.updateValueAndValidity();
     });
 
     structureForm.get('governorateOfResidenceUuidGovernorate')?.valueChanges.subscribe(value => {
@@ -176,25 +179,155 @@ export class Step1Component implements OnInit {
     });
   }
 
+  // Single option checkbox handlers
+  handleConsultancyFrameChange(event: Event, value: number): void {
+    const checkbox = event.target as HTMLInputElement;
+    const consultancyFrameControl = this.structureForm.get('consultancyFrame');
+
+    if (checkbox.checked) {
+      // Uncheck all other checkboxes
+      const checkboxes = document.querySelectorAll('input[formControlName="consultancyFrame"]') as NodeListOf<HTMLInputElement>;
+      checkboxes.forEach(cb => {
+        if (cb !== checkbox) {
+          cb.checked = false;
+        }
+      });
+      consultancyFrameControl?.setValue(value);
+      this.showOtherConsultancyFrame(event, value);
+    } else {
+      consultancyFrameControl?.setValue(null);
+      this.showOtherConsultancyFrameInput = false;
+    }
+  }
+
+  handleFamilySituationChange(event: Event, value: number): void {
+    const checkbox = event.target as HTMLInputElement;
+    const familySituationControl = this.structureForm.get('familySituationIdFamilySituation');
+
+    if (checkbox.checked) {
+      const checkboxes = document.querySelectorAll('input[formControlName="familySituationIdFamilySituation"]') as NodeListOf<HTMLInputElement>;
+      checkboxes.forEach(cb => {
+        if (cb !== checkbox) {
+          cb.checked = false;
+        }
+      });
+      familySituationControl?.setValue(value);
+      this.showOtherFamilySituation(event, value);
+    } else {
+      familySituationControl?.setValue(null);
+      this.showOtherFamilySituationInput = false;
+    }
+  }
+
+  handleAccommodationTypeChange(event: Event, value: number): void {
+    const checkbox = event.target as HTMLInputElement;
+    const accommodationTypeControl = this.structureForm.get('accommodationTypeIdAccommodationType');
+
+    if (checkbox.checked) {
+      const checkboxes = document.querySelectorAll('input[formControlName="accommodationTypeIdAccommodationType"]') as NodeListOf<HTMLInputElement>;
+      checkboxes.forEach(cb => {
+        if (cb !== checkbox) {
+          cb.checked = false;
+        }
+      });
+      accommodationTypeControl?.setValue(value);
+      this.showOtherAccommodationType(event, value);
+    } else {
+      accommodationTypeControl?.setValue(null);
+      this.showOtherAccommodationTypeInput = false;
+    }
+  }
+
+  handleProfessionChange(event: Event, value: number): void {
+    const checkbox = event.target as HTMLInputElement;
+    const professionControl = this.structureForm.get('professionUuidProfession');
+
+    if (checkbox.checked) {
+      const checkboxes = document.querySelectorAll('input[formControlName="professionUuidProfession"]') as NodeListOf<HTMLInputElement>;
+      checkboxes.forEach(cb => {
+        if (cb !== checkbox) {
+          cb.checked = false;
+        }
+      });
+      professionControl?.setValue(value);
+    } else {
+      professionControl?.setValue(null);
+    }
+  }
+
+  handleSchoolLevelChange(event: Event, value: number): void {
+    const checkbox = event.target as HTMLInputElement;
+    const schoolLevelControl = this.structureForm.get('schoolLevelUuidSchoolLevelSchoolLevel');
+
+    if (checkbox.checked) {
+      const checkboxes = document.querySelectorAll('input[formControlName="schoolLevelUuidSchoolLevelSchoolLevel"]') as NodeListOf<HTMLInputElement>;
+      checkboxes.forEach(cb => {
+        if (cb !== checkbox) {
+          cb.checked = false;
+        }
+      });
+      schoolLevelControl?.setValue(value);
+    } else {
+      schoolLevelControl?.setValue(null);
+    }
+  }
+
   get structureForm(): FormGroup {
     return this.parentForm.get('structureInfo') as FormGroup;
   }
-
   get originOfDemandControls(): FormArray {
     return this.structureForm.get('originOfDemandSetUuidOriginOfDemands') as FormArray;
   }
 
+  // Check if any origin of demand is selected
+  hasAnyOriginOfDemandSelected(): boolean {
+    for (let i = 0; i < this.originOfDemandControls.length; i++) {
+      const control = this.originOfDemandControls.at(i).get('selected');
+      if (control && control.value === true) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Update validation for origin of demand fields
+  updateOriginOfDemandValidation(): void {
+    const hasSelection = this.hasAnyOriginOfDemandSelected();
+
+    // If at least one option is selected, remove required validators
+    for (let i = 0; i < this.originOfDemandControls.length; i++) {
+      const control = this.originOfDemandControls.at(i).get('selected');
+      if (control) {
+        if (hasSelection) {
+          control.clearValidators();
+        } else {
+          control.setValidators([Validators.required]);
+        }
+        control.updateValueAndValidity({ emitEvent: false });
+      }
+    }
+  }
+
   initializeOriginOfDemandControls(): void {
     const array = this.structureForm.get('originOfDemandSetUuidOriginOfDemands') as FormArray;
-    // Clear existing controls
+alert("ss")
+    const previousValues = array.controls.map(control => control.value);
+console.log(previousValues);
+console.log("--------------")
     while (array.length) {
       array.removeAt(0);
     }
-    // Add new controls
+
     this.originOfDemande?.forEach((_, index) => {
-      array.push(this.fb.control(false));
+      array.push(this.fb.control(previousValues[index] ?? null, Validators.required));
     });
+
+    if (this.hasAnyOriginOfDemandSelected()) {
+      this.updateOriginOfDemandValidation();
+    }
   }
+
+
 
   showOngList(): boolean {
     const sector = this.structureForm.get('sector')?.value;
@@ -295,18 +428,16 @@ export class Step1Component implements OnInit {
     this.showOtherAccommodationTypeInput = checkbox.checked && value === -1;
   }
 
-  checkOtherOriginOfDemand(index: number, value: boolean): void {
-    const originArray = this.originOfDemandControls;
-    originArray.at(index).setValue(value);
+  checkOtherOriginOfDemand(uuidOrigin: number, selectedValue: boolean): void {
+    if (uuidOrigin === -1) {
+      this.showOtherOriginOfDemandInput = selectedValue;
 
-    if (this.originOfDemande && this.originOfDemande[index].uuidOriginOfDemand === -1) {
-      this.showOtherOriginOfDemandInput = value;
-      if (value) {
+      if (selectedValue) {
         this.structureForm.get('otherOriginOfDemand')?.setValidators([Validators.required]);
       } else {
         this.structureForm.get('otherOriginOfDemand')?.clearValidators();
       }
-      this.structureForm.get('otherOriginOfDemand')?.updateValueAndValidity({ emitEvent: false });
+      this.structureForm.get('otherOriginOfDemand')?.updateValueAndValidity();
     }
   }
 
@@ -495,5 +626,3 @@ export class Step1Component implements OnInit {
     });
   }
 }
-
-export { Step1Component }
